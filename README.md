@@ -1,5 +1,8 @@
-# Backend
-Archivo para ver un listado de archivos, generarlos y guardarlos en una carpeta
+# Chat CMD
+Proyecto con el fin de realizar una conexion entre un servidor y varios clientes con el fin de 
+poder chatear y bajar archivos directos del servidor
 
-#Funcionamiento
-Se debe tener al menos un directorio llamado Files para poder crear un nuevo archivo
+# Lista de comandos
+Para acceder a los comando basta con escribir
+/lsFiles
+/get seguido del nombre del archivo
