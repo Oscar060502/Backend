@@ -1,3 +1,4 @@
+# pylint:disable=all
 import socket
 import threading
 import sys
@@ -18,20 +19,33 @@ class Servidor():
             self.clientes.append(conn)
             threading.Thread(target=self.procesar_conexion, args=(conn,)).start()
     
+    def msg_to_all(self, msg, cliente):
+        for c in self.clientes:
+            try:
+                if c != cliente:
+                    c.send(msg)
+
+            except:
+                self.clientes.remove(c)
+                
     def procesar_conexion(self, conn):
         while True:
             try:
                 data = conn.recv(1024)
                 if not data:
                     break
-                command = pickle.loads(data)
-                response = self.ejecutar_comando(command)
-                conn.send(pickle.dumps(response))
+                paquete = pickle.loads(data)
+                if paquete["type"] == "command":
+                    response = self.ejecutar_comando(paquete["content"])
+                    conn.send(pickle.dumps(response))
+                elif paquete["type"] == "message":
+                    self.msg_to_all(pickle.dumps(paquete["content"]), conn)
             except Exception as e:
                 print(f"Error: {e}")
                 break
         conn.close()
 
+    
     def ejecutar_comando(self, command):
         if command == "lsFiles":
             return self.listar_archivos()
@@ -50,7 +64,7 @@ class Servidor():
         if os.path.isfile(filepath):
             with open(filepath, 'rb') as f:
                 file_data = f.read()
-            return file_data
+            return {"filename": filename, "file_data": file_data}
         else:
             return "Archivo no encontrado."
 

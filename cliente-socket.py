@@ -1,3 +1,4 @@
+# pylint:disable=all
 import socket
 import threading
 import sys
@@ -14,41 +15,53 @@ class Cliente():
             msg_recv.start()
             while True:
                 msg = input('cliente> ')
-                if msg != 'salir':
-                    self.send_msg(msg)
-                else:
+                if msg == 'salir':
                     self.sock.close()
                     sys.exit()
+                elif msg.startswith("/"):  # Si el mensaje es un comando (empieza con "/")
+                    self.send_command(msg[1:])
+                else:
+                    self.send_msg(msg)
         except Exception as e:
             print("Error al conectar el socket:", e)
-            
+
     def msg_recv(self):
         while True:
             try:
                 data = self.sock.recv(1024)
                 if data:
                     data = pickle.loads(data)
-                    if isinstance(data, bytes):  # Si se recibe un archivo
-                        self.guardar_archivo(data)
+                    if isinstance(data, dict) and "file_data" in data:  #Si se recibe un archivo
+                        self.guardar_archivo(data["filename"], data["file_data"])
                     else:
-                        print(data)  # Imprimir la respuesta del servidor
+                        print(f"Servidor: {data}")  # Mensaje o respuesta del servidor
             except Exception as e:
                 print("Error en la recepción de datos:", e)
                 break
 
+
     def send_msg(self, msg):
         try:
-            self.sock.send(pickle.dumps(msg))
+            paquete = {"type": "message", "content": msg}
+            self.sock.send(pickle.dumps(paquete))
         except Exception as e:
             print('Error al enviar el mensaje:', e)
 
-    def guardar_archivo(self, data):
+    def send_command(self, command):
+        try:
+            paquete = {"type": "command", "content": command}
+            self.sock.send(pickle.dumps(paquete))
+        except Exception as e:
+            print('Error al enviar el comando:', e)
+
+    def guardar_archivo(self, filename, file_data):
         if not os.path.exists("downloads"):
             os.makedirs("downloads")
-        filename = input("Nombre para guardar el archivo: ")
         with open(os.path.join("downloads", filename), 'wb') as f:
-            f.write(data)
+            f.write(file_data)
+        print("Guardando el archivo espere....")
         print(f"Archivo guardado como {filename} en la carpeta 'downloads'.")
+
 
 if __name__ == "__main__":
     cliente = Cliente()
